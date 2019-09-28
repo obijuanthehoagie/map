@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.0.0/css/ol.css" type="text/css">
+    <style>
+      .map {
+        height: 98vh;
+        width: 100%;
+      }
+      /* https://openlayers.org/en/latest/examples/popup.html */
+      .ol-popup {
+        position: absolute;
+        background-color: white;
+        -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        white-space: nowrap;
+        font-family: Century Gothic,CenturyGothic,AppleGothic,sans-serif;  
+      }
+      .ol-popup:after, .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+      .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+      }
+      .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+      }
+      .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+      }
+      .ol-popup-closer:after {
+        content: "✖";
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.0.0/build/ol.js"></script>
+    <title>Institutions</title>
+  </head>
+  <body>
+    <!--<h2>Juan, what shoud this say?</h2>-->
+    <div id="map" class="map" ></div>
+    <div id="popup" class="ol-popup">
+      <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+      <div id="popup-content"></div>
+    </div>
+    <script type="text/javascript">
+
+
+
+      // List of [lon, lat, name]'s for markers
+      var markers = [
+         [-84.2946, 33.7692, '<b>Agnes Scott College</b><br/>Decatur, Georgia'],
+         [-87.9636, 42.9835, '<b>Alverno College</b><br/>Milwaukee, Wisconsin'],
+         [-73.9640, 40.8091, '<b>Barnard College</b><br/>New York City, New York'],
+         [-72.5826, 42.0559, '<b>Bay Path University</b><br/>Longmeadow, Massachusetts'],
+         [-83.8218, 34.3030, '<b>Brenau University</b><br/>Gainesville, Georgia'],
+         [-75.3152, 40.0281, '<b>Bryn Mawr College</b><br/>Bryn Mawr, Pennsylvania'],
+         [-75.5197, 40.5859, '<b>Cedar Crest College</b><br/>Allentown, Pennsylvania'],
+         [-96.0221, 41.2399, '<b>College of Saint Mary</b><br/>Omaha, Nebraska'],
+         [-81.0309, 34.0455, '<b>Columbia College</b><br/>Columbia, South Carolina'],
+         [-81.9186, 34.9560, '<b>Converse College</b><br/>Spartanburg, South Carolina'],
+         [-94.3701, 37.8381, '<b>Cottey College</b><br/>Nevada, Missouri'],
+         [-79.9424, 37.3561, '<b>Hollins University</b><br/>Roanoke, Virginia'],
+         [-87.3158, 32.6307, '<b>Judson College</b><br/>Marion, Alabama'],
+         [-78.6885, 35.7990, '<b>Meredith College</b><br/>Raleigh, North Carolina'],
+         [-122.1829, 37.7807, '<b>Mills College</b><br/>Oakland, California'],
+         [-72.5761, 42.2533, '<b>Mount Holyoke College</b><br/>South Hadley, Massachusetts'],
+         [-88.0312, 43.0725, '<b>Mount Mary University</b><br/>Milwaukee, Wisconsin'],
+         [-76.6212, 39.3522, '<b>Notre Dame of Maryland University</b><br/>Baltimore, Maryland'],
+         [-73.6933, 73.6933, '<b>Russell Sage College</b><br/>Troy, New York'],
+         [-93.1828, 44.9253, '<b>St. Catherine University</b><br/>Saint Paul, Minnesota'],
+         [-86.2567, 41.7073, '<b>St. Mary\'s College</b><br/>Notre Dame, Indiana'],
+         [-80.2411, 36.0874, '<b>Salem College</b><br/>Winston-Salem, North Carolina'],
+         [-117.7102, 34.1039, '<b>Scripps College</b><br/>Claremont, California'],
+         [-71.0999, 42.3394, '<b>Simmons University</b><br/>Boston, Massachusetts'],
+         [-72.6403, 42.3163, '<b>Smith College</b><br/>Northampton, Massachusetts'],
+         [-84.4123, 33.7464, '<b>Spelman College</b><br/>Atlanta, Georgia'],
+         [-92.3214, 38.9516, '<b>Stephens College</b><br/>Columbia, Missouri'],
+         [-79.0829, 37.5576, '<b>Sweet Briar College</b><br/>Sweet Briar, Virginia'],
+         [-77.0049, 38.9276, '<b>Trinity Washington University</b><br/>Washington, D.C.'],
+         [-71.3059, 42.2936, '<b>Wellesley Czzzzxcbgvvollege</b><br/>Wellesley, Massachusetts'],
+         [-83.7124, 32.8745, '<b>Wesleyan College</b><br/>Macon, Georgia'],
+         [-104.9619, 39.6766, '<b>Colorado Women\'s College at the University of Denver</b><br/>Denver, Colorado'],
+      ];
+
+
+
+
+
+      // Make map https://openlayers.org/en/latest/doc/quickstart.html
+      var map = new ol.Map({
+        target: 'map',
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.OSM()
+          }) 
+        ],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([-98, 39]),
+          zoom: 5
+        })
+      });
+
+      
+      // Add markers
+      var marker_style = [
+        new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6,
+                fill: new ol.style.Fill({
+                    color: 'rgba(255, 40, 40,0.3)'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(255, 40, 40, 1)'
+                })
+            })
+        })
+    ];
+      var vectorSource = new ol.source.Vector();
+
+      for (var i=0; i<markers.length; i++) {
+          var lon = markers[i][0];
+          var lat = markers[i][1];
+          var marker = new ol.Feature({
+            geometry: new ol.geom.Point(
+                ol.proj.fromLonLat([lon, lat]),
+            ),
+            name: markers[i][2],
+          });
+       marker.setStyle(marker_style);
+       vectorSource.addFeature(marker);                
+      }                        
+      var markerVectorLayer = new ol.layer.Vector({source: vectorSource});
+      map.addLayer(markerVectorLayer);
+
+
+      // Pop ups https://openstreetmap.be/en/projects/howto/openlayers.html
+     var container = document.getElementById('popup');
+     var content = document.getElementById('popup-content');
+     var closer = document.getElementById('popup-closer');
+
+     var overlay = new ol.Overlay({
+         element: container,
+         autoPan: true,
+         autoPanAnimation: {
+             duration: 250
+         }
+     });
+     map.addOverlay(overlay);
+
+     closer.onclick = function() {
+         overlay.setPosition(undefined);
+         closer.blur();
+         return false;
+     };
+
+
+
+     map.on('singleclick', function (event) {
+     if (map.hasFeatureAtPixel(event.pixel) === true) {
+         var coordinate = event.coordinate;
+         var inst_name = map.getFeaturesAtPixel(event.pixel)[0].values_.name
+         content.innerHTML = inst_name;
+         overlay.setPosition(coordinate);
+     } else {
+         overlay.setPosition(undefined);
+         closer.blur();
+     }
+    });
+
+    </script>
+  </body>
+</html>
